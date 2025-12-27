@@ -1,9 +1,10 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Patient, ADRAnalysis, NetworkData } from "../types";
 
-// Fix: Use process.env.API_KEY directly for initialization as per SDK guidelines
+// Always use process.env.API_KEY for secure integration
 export const getGeminiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 };
 
 export const analyzePatientADR = async (
@@ -11,22 +12,24 @@ export const analyzePatientADR = async (
   newSymptoms: string
 ): Promise<ADRAnalysis> => {
   const ai = getGeminiClient();
-  // Fix: Select 'gemini-3-pro-preview' for complex reasoning tasks like pharmacovigilance analysis
+  // Using gemini-3-pro-preview for high-complexity medical reasoning
   const model = "gemini-3-pro-preview";
 
   const prompt = `
-    Perform a high-level pharmacovigilance analysis for:
-    Patient: ${patient.name}, Age ${patient.age}, ${patient.gender}.
-    Conditions: ${patient.diagnosis.join(', ')}.
-    Medications: ${patient.medications.map(m => `${m.name} (${m.dosage})`).join(', ')}.
-    New Presentation: "${newSymptoms}"
+    Role: Senior Clinical Pharmacologist & AI Specialist.
+    Task: Perform a deep-learning based pharmacovigilance analysis.
+    
+    Patient Profile: ${patient.name}, ${patient.age}yo ${patient.gender}.
+    Existing Conditions: ${patient.diagnosis.join(', ')}.
+    Active Pharmacotherapy: ${patient.medications.map(m => `${m.name} (${m.dosage})`).join(', ')}.
+    New Clinical Presentation: "${newSymptoms}"
 
-    Task:
-    1. Identify potential Adverse Drug Reactions (ADR).
-    2. Determine which drugs are likely causative.
-    3. Provide a reasoning based on clinical pharmacology.
-    4. Rank risk as LOW, MODERATE, HIGH, or CRITICAL.
-    5. Calculate a 0-100 causality score.
+    Instructions:
+    1. Assess causality using Naranjo and WHO-UMC criteria principles.
+    2. Identify specific suspect drugs.
+    3. Explain the biological mechanism (e.g., CYP450 inhibition, receptor antagonism).
+    4. Categorize risk: LOW, MODERATE, HIGH, CRITICAL.
+    5. Provide immediate clinical follow-up questions.
   `;
 
   const response = await ai.models.generateContent({
@@ -50,8 +53,7 @@ export const analyzePatientADR = async (
     }
   });
 
-  // Fix: Extract generated text directly from response.text property
-  return JSON.parse(response.text) as ADRAnalysis;
+  return JSON.parse(response.text || "{}") as ADRAnalysis;
 };
 
 export const generateNeuralMap = async (analysis: ADRAnalysis): Promise<NetworkData> => {
@@ -59,15 +61,13 @@ export const generateNeuralMap = async (analysis: ADRAnalysis): Promise<NetworkD
   const model = "gemini-3-flash-preview";
 
   const prompt = `
-    Create a JSON network graph mapping the causality for these symptoms: ${analysis.detectedSymptoms.join(', ')}
-    Associated with these drugs: ${analysis.suspectDrugs.join(', ')}
+    Generate a neural network mapping of drug-mechanism-symptom links.
+    Drugs: ${analysis.suspectDrugs.join(', ')}
+    Symptoms: ${analysis.detectedSymptoms.join(', ')}
     
-    Nodes should represent:
-    - Drugs (Group 1)
-    - Biological Mechanisms/Pathways (Group 3)
-    - Symptoms (Group 2)
-    
-    Return a JSON with "nodes" [{id, group}] and "links" [{source, target, value}].
+    Structure:
+    - Nodes: {id: string, group: number} (1: Drug, 2: Symptom, 3: Pathway)
+    - Links: {source: string, target: string, value: number}
   `;
 
   const response = await ai.models.generateContent({
@@ -107,6 +107,5 @@ export const generateNeuralMap = async (analysis: ADRAnalysis): Promise<NetworkD
     }
   });
 
-  // Fix: Extract generated text directly from response.text property
-  return JSON.parse(response.text) as NetworkData;
+  return JSON.parse(response.text || "{}") as NetworkData;
 };

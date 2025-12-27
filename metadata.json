@@ -1,0 +1,5 @@
+{
+  "name": "NeuroPharm AI",
+  "description": "An advanced neural-network powered pharmacovigilance dashboard for monitoring patient adverse drug reactions (ADR) with real-time AI analysis.",
+  "requestFramePermissions": []
+}
